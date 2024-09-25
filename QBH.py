@@ -20,8 +20,6 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
     for idx, i in enumerate(range(0, len(amplitude_data), n0)):
         group = amplitude_data[i:i + n0]
         A[idx] = max(group)  
-        print(f"Group {idx}: {group} -> Max: {A[idx]}")
-
     
     # Step 2: Remove the background noise by setting the threshold value
         
@@ -35,4 +33,10 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
     mean_A = np.mean(A)
     for i in range(0, len(A)):
         A[i] = A[i] / (0.2 + 0.1 * mean_A)
+
+    # Step 4: Take the fractional power for the envelope amplitude
+        
+    l = 0.7
+    for i in range(0, len(A)):
+        A[i] = A[i] ** l
                         
