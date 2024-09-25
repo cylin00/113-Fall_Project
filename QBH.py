@@ -15,12 +15,13 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
     # Step 1: Select the max-amplitude data in groups of n0 = 80
 
     n0 = 80
+    A = np.zeros(len(amplitude_data) // n0)
 
-    for i in range(0, len(amplitude_data), n0):
+    for idx, i in enumerate(range(0, len(amplitude_data), n0)):
         group = amplitude_data[i:i + n0]
-        A = max(group)
-    
-        print(f"Group {i // n0 }, Max Amplitude: {A}")
+        A[idx] = max(group)  
+        print(f"Group {idx}: {group} -> Max: {A[idx]}")
+
     
     # Step 2: Remove the background noise by setting the threshold value
         
@@ -29,4 +30,9 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
                    if A[i] < rho:
                         A[i] = 0
 
-    
+    # Step 3: Perform th normalization of A
+                        
+    mean_A = np.mean(A)
+    for i in range(0, len(A)):
+        A[i] = A[i] / (0.2 + 0.1 * mean_A)
+                        
