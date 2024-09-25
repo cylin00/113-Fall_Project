@@ -21,3 +21,12 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
         A = max(group)
     
         print(f"Group {i // n0 }, Max Amplitude: {A}")
+    
+    # Step 2: Remove the background noise by setting the threshold value
+        
+    rho = 0
+    for i in range(0, len(A)):
+                   if A[i] < rho:
+                        A[i] = 0
+
+    
