@@ -25,8 +25,8 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
         
     rho = 0
     for i in range(0, len(A)):
-                   if A[i] < rho:
-                        A[i] = 0
+        if A[i] < rho:
+            A[i] = 0
 
     # Step 3: Perform th normalization of A
                         
@@ -35,8 +35,17 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
         A[i] = A[i] / (0.2 + 0.1 * mean_A)
 
     # Step 4: Take the fractional power for the envelope amplitude
-        
+
+    B = np.zeros(len(A))  
     l = 0.7
     for i in range(0, len(A)):
-        A[i] = A[i] ** l
-                        
+        B[i] = A[i] ** l
+
+    # Step 5: Convolution of B with an envelope match filter
+        
+    f = [3, 3, 4, 4, -1, -1, -2, -2, -2, -2, -2, -2]
+    C = np.zeros(len(B))
+    for i in range(0, len(B)):
+        for j in range(0, 11):
+            C[i] += B[i - j] * f[j]
+        # print(f"C{i}: {C[i]}")
