@@ -49,3 +49,13 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
         for j in range(0, 11):
             C[i] += B[i - j] * f[j]
         # print(f"C{i}: {C[i]}")
+            
+    # Step 6: Find the onsets of C and > threshold value
+    
+    threshold = 17
+    t = 0
+    for i in range(1, len(C) // 3 ):
+        if (C[3*i] > threshold) & (C[3*i] > C[3*i - 1]) & (C[3*i] > C[3*i - 2]):
+            print(f"C{3*i}: {C[3*i]}")
+            t += 1
+    print(f"Number of onsets: {t}")
