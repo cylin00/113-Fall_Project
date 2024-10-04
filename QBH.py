@@ -1,5 +1,6 @@
 import wave
 import numpy as np
+import matplotlib.pyplot as plt
 
 with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
     
@@ -11,7 +12,7 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
     frames = audio.readframes(num_frames)
     audio_data = np.frombuffer(frames, dtype=np.int16) 
     amplitude_data = abs(audio_data)
-    
+
     # Step 1: Select the max-amplitude data in groups of n0 = 80
 
     n0 = 80
@@ -52,10 +53,31 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
             
     # Step 6: Find the onsets of C and > threshold value
     
-    threshold = 17
+    threshold = 15
     t = 0
+    Predicted_onsets = []
+    Predicted_onsets_values = []
     for i in range(1, len(C) // 3 ):
         if (C[3*i] > threshold) & (C[3*i] > C[3*i - 1]) & (C[3*i] > C[3*i - 2]):
-            print(f"C{3*i}: {C[3*i]}")
+            Predicted_onsets.append(3*i)
+            Predicted_onsets_values.append(C[3*i])
             t += 1
     print(f"Number of onsets: {t}")
+
+    # Draw the graph with onsets
+    onset_times = np.array(Predicted_onsets) * n0 / frame_rate
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(time, audio_data, label='Amplitude')
+
+    for onset_time in onset_times:
+        plt.axvline(x=onset_time, color='red', linestyle='-', label='Onset' if onset_time == onset_times[0] else "")
+
+    plt.title('Amplitude vs. Time with Onsets')
+    plt.ylabel('Amplitude')
+    plt.xlabel('Time [s]')
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+    # Delete small intervals between onsets
