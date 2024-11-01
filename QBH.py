@@ -6,7 +6,7 @@ def GetAmplitude(audio, n0, startTime, endTime):
     segment = audio[int(startTime * frame_rate // n0):int(endTime * frame_rate // n0)]
     return segment
 
-with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
+with wave.open('hummingdata/10/lugo_新不了情.wav', 'rb') as audio:
     
     # Step 0: Read the audio file and extract the amplitude data
 
@@ -131,7 +131,7 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
         if SilenceDuration >= 1.5:
             StartTime = OnsetTimes[o]
             EndTime = OnsetTimes[o+1]
-            print(f"Silence between {OnsetTimes[o-1]} and {OnsetTimes[o]}")
+            # print(f"Silence between {OnsetTimes[o-1]} and {OnsetTimes[o]}")
             
             amplitudes_in_silence = GetAmplitude(Enveloped_Data, n0, StartTime, EndTime)
             #print(f"Amplitude in silence: {amplitudes_in_silence}")
@@ -143,41 +143,121 @@ with wave.open('hummingdata/10/lugo_朋友.wav', 'rb') as audio:
                 if(amplitudes_in_silence[s] >= newThreshold and (s - startIndex) >= (0.15 * frame_rate // n0)):
                     startIndex = s
                     ax3.axvline(x=StartTime + s * n0 / frame_rate, color='green', linestyle='-', linewidth = 0.5, label='Onset' if onset_time == onset_times[0] else "")
-                    print(f"new possible threshold = {amplitudes_in_silence[s]}, time = {StartTime + s * n0 / frame_rate}")
+                    # print(f"new possible threshold = {amplitudes_in_silence[s]}, time = {StartTime + s * n0 / frame_rate}")
     
-    print(f"predicted number of onsets = {len(OnsetTimes)}")
+    # print(f"predicted number of onsets = {len(OnsetTimes)}")
 
     ax3.set_title('Amplitude vs. Time with Adaptive Threshold')
     ax3.set_xlabel('time')
     ax3.set_ylabel('Amplitude') 
 
     plt.tight_layout()
-    plt.show()
+    #plt.show()
 
     # Discrete Fourier Transform 
     
     N = len(OnsetIndex)
     fs = 8000
+    Indices = []
+    DFTmagnitudes = []
+    OriginalData = []
+    SmoothData = []
+
+    OnsetMag = []
+    FundFreq = []
 
     for o in range(0, N-1):
         window_size = OnsetIndex[o+1] - OnsetIndex[o]
         segment = Enveloped_Data[o:o+window_size]
         X_m_segment = np.fft.fft(segment)
         freqs_segment = np.fft.fftfreq(len(segment), 1/fs)
-        print(f"Window size = {window_size}, X_m_segment: {X_m_segment}")
+        # print(f"Window size = {window_size}, X_m_segment: {X_m_segment}")
+
+        # Add smooth filter to the DFT result
+        L = 10
+        smooth = [0] * window_size
+        for i in range(0, window_size):
+            if abs(i) < window_size / 2:
+                smooth[i] = (L - abs(i)) / ( L ^ 2)
+            else:
+                smooth[i] = 0
+
+        Xs = abs(X_m_segment) * smooth
+
+        # Store the Points satisifying the three conditions after the smooth filter
+        maxIndex = np.argmax(Xs)
+        fund = fs 
+        Fup = fs / 2
+        Flow = 80
+        print(f"len of M = {len(Xs)}")
+        for i in range(0, len(Xs)):
+            if i == 0 and Xs[i] > Xs[i+1] and Xs[i] >= Xs[maxIndex]/5:
+                print(f"*, i = {i}, freq = {i * fs / window_size}")
+                if (i * fs / window_size) <= Fup and (i * fs / window_size) >= Flow:
+                    print(f"fundamental frequency = {i * fs / window_size}")
+                    if i * fs / window_size < fund:
+                        fund = i * fs / window_size
+            else:
+                if Xs[i] > Xs[i-1] and Xs[i] > Xs[i+1] and Xs[i] >= Xs[maxIndex]/5:
+                    print(f"*, i = {i}, freq = {i * fs / window_size}")
+                    if i * fs / window_size <= Fup and i * fs / window_size >= Flow:
+                        print(f"fundamental frequency = {i * fs / window_size}")
+                        if i * fs / window_size < fund:
+                            fund = i * fs / window_size
+        
+        print(f"get fundamental frequency = {fund} between each onset")
+
+        if o == 0:
+            OnsetMag.append(Xs[0])
+            FundFreq.append(0)
+        else:
+            if Xs[0] > OnsetMag[-1]:
+                OnsetMag.append(Xs[0])
+                FundFreq.append(o * fs / len(Xs))
+            else:
+                OnsetMag.append(0)
+                FundFreq.append(0)
 
         magnitude = np.abs(X_m_segment)
         indices = np.arange(OnsetIndex[o], OnsetIndex[o+1])
-        plt.figure(figsize=(10, 6))
-        plt.plot(indices, magnitude, label='DFT Magnitude', color='blue')
-        plt.plot(indices, segment, label='Original Data', color='orange', alpha=0.7)
-        plt.xlabel('Original Data Index')
-        plt.ylabel('DFT Magnitude')
-        plt.title('DFT Magnitude vs. Data Index')
-        plt.show()
+        Indices.extend(indices)
+        DFTmagnitudes.extend(magnitude)
+        OriginalData.extend(segment)
+        SmoothData.extend(Xs)
+
+    
+    print(f"Onset magnitude = {OnsetMag} of all onset")
+    print(f"Fundamental frequency = {FundFreq} of all onset")
+    FundaFreq = min([value for value in FundFreq if value != 0 and value > 80 and value < 4000])
+    print(f"Fundamental frequency = {FundaFreq}")
 
 
-    # Add Smooth Filter to the DFT Result
+    fig, axs = plt.subplots(3, 1, figsize=(7, 7), sharex=True)
 
+    axs[0].plot(Indices, OriginalData, color='orange', label='Original Data')
+    for onset in OnsetIndex:
+        axs[0].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
+        axs[0].text(onset, max(OriginalData) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
+    axs[0].set_ylabel('Amplitude')
+    axs[0].set_title('Original Data with Onset Lines')
+    axs[0].legend()
 
-    # Denote the Fundamental Frequency
+    axs[1].plot(Indices, DFTmagnitudes, color='blue', label='DFT Magnitude')
+    for onset in OnsetIndex:
+        axs[1].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
+        axs[1].text(onset, max(DFTmagnitudes) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
+    axs[1].set_ylabel('Amplitude')
+    axs[1].set_title('DFT Magnitude with Onset Lines')
+    axs[1].legend()
+
+    axs[2].plot(Indices, SmoothData, color='red', label='Smoothed DFT Magnitude')
+    for onset in OnsetIndex:
+        axs[2].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
+        axs[2].text(onset, max(SmoothData) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
+    axs[2].set_xlabel('Original Data Index')
+    axs[2].set_ylabel('Amplitude')
+    axs[2].set_title('Smoothed DFT Magnitude with Onset Lines')
+    axs[2].legend()
+
+    plt.tight_layout()
+    plt.show()
