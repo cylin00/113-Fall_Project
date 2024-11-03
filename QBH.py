@@ -1,80 +1,32 @@
-import wave
 import numpy as np
 import matplotlib.pyplot as plt
-import Audio
+import AudioProcessing.Audio as Audio
+import DataProcessing.DataProcessing as Data
 
-(amplitude_data, time, frame_rate, audio_data) = Audio.AudioReader.GetAudioData(10, 'lugo_新不了情.wav')
+(amplitude_data, time, frame_rate, audio_data) = Audio.AudioReader.GetAudioData(10, 'lugo_火車快飛.wav')
 
 def GetAmplitude(audio, n0, startTime, endTime):
     segment = audio[int(startTime * frame_rate // n0):int(endTime * frame_rate // n0)]
     return segment
 
-# with wave.open('hummingdata/10/lugo_新不了情.wav', 'rb') as audio:
-    
-#     # Step 0: Read the audio file and extract the amplitude data
-
-#     params = audio.getparams()
-#     num_channels, sample_width, frame_rate, num_frames = params[:4]
-    
-#     frames = audio.readframes(num_frames)
-#     audio_data = np.frombuffer(frames, dtype=np.int16) 
-#     amplitude_data = abs(audio_data)
-#     time = np.linspace(0, len(audio_data) / frame_rate, num=len(audio_data))
-
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 6))
-
-# Step 1: Select the max-amplitude data in groups of n0 = 80
-
+# Select the max-amplitude data in groups of n0 = 80
 n0 = 80
-A = np.zeros(len(amplitude_data) // n0)
+A = Data.DataProcessing.GetMaxAmplitude(n0, amplitude_data)
+A = Data.DataProcessing.NormalizeData(A) # Normalization of A : mean_A -> A
+B = Data.DataProcessing.FractionalData(A, 0.7) # Take the fractional power
 
-for idx, i in enumerate(range(0, len(amplitude_data), n0)):
-    group = amplitude_data[i:i + n0]
-    A[idx] = max(group)  
-
-# Step 2: Remove the background noise by setting the threshold value
-    
-rho = 0
-for i in range(0, len(A)):
-    if A[i] < rho:
-        A[i] = 0
-
-# Step 3: Perform th normalization of A
-                    
-mean_A = np.mean(A)
-for i in range(0, len(A)):
-    A[i] = A[i] / (0.2 + 0.1 * mean_A)
-
-# Step 4: Take the fractional power for the envelope amplitude
-
-B = np.zeros(len(A))  
-l = 0.7
-for i in range(0, len(A)):
-    B[i] = A[i] ** l
-
-# Step 5: Convolution of B with an envelope match filter
-    
 f = [3, 3, 4, 4, -1, -1, -2, -2, -2, -2, -2, -2]
-Enveloped_Data = np.zeros(len(B))
-for i in range(0, len(B)):
-    for j in range(0, 11):
-        Enveloped_Data[i] += B[i - j] * f[j]
-    # print(f"C{i}: {C[i]}")
+Enveloped_Data = Data.DataProcessing.EnvelopData(B, f) # Convolution of B with an envelope match filter
         
-# Step 6: Find the onsets of C and > threshold value
-#print(f"data after chosen: {Enveloped_Data}")
-
-threshold = 15.3
-t = 0
+threshold = 17 # 15.3
 Predicted_onsets = []
-for i in range(1, len(Enveloped_Data) // 3 ):
+for i in range(1, len(Enveloped_Data) // 3 ): # Find the onsets of EnvData and > threshold value
     if (Enveloped_Data[3*i] > threshold) & (Enveloped_Data[3*i] > Enveloped_Data[3*i - 1]) & (Enveloped_Data[3*i] > Enveloped_Data[3*i - 2]):
         Predicted_onsets.append(3*i)
-        t += 1
-        # print(f"{t}-th predicted onsets = {Enveloped_Data[3*i]}, index = {3*i}")
 
 # Draw the graph with onsets
 onset_times = np.array(Predicted_onsets) * n0 / frame_rate
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 6))
 ax1.plot(time, audio_data)
 for onset_time in onset_times:
         ax1.axvline(x=onset_time, color='red', linestyle='-', linewidth = 0.5, label='Onset' if onset_time == onset_times[0] else "")
