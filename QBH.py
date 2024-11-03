@@ -120,15 +120,16 @@ for o in range(0, N-1):
     (X_m_segment, freqs_segment) = Freq.FrequencyAnalyzing.DFT(segment, frame_rate)
     
     # Add smooth filter to the DFT result
-    L = 20
-    smooth = [0] * window_size
-    for i in range(0, window_size):
-        if abs(i) < window_size / 2:
-            smooth[i] = (L - abs(i)) / ( L ^ 2)
-        else:
-            smooth[i] = 0
+    Xs = Freq.FrequencyAnalyzing.Smooth(X_m_segment, 20)
+    # L = 20
+    # smooth = [0] * window_size
+    # for i in range(0, window_size):
+    #     if abs(i) < window_size / 2:
+    #         smooth[i] = (L - abs(i)) / ( L ^ 2)
+    #     else:
+    #         smooth[i] = 0
 
-    Xs = abs(X_m_segment) * smooth
+    # Xs = abs(X_m_segment) * smooth
 
     # Store the Points satisifying the three conditions after the smooth filter
     maxIndex = np.argmax(Xs)
