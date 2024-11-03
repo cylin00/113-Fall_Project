@@ -18,16 +18,16 @@ B = Data.DataProcessing.FractionalData(A, 0.7) # Take the fractional power
 f = [3, 3, 4, 4, -1, -1, -2, -2, -2, -2, -2, -2]
 Enveloped_Data = Data.DataProcessing.EnvelopData(B, f) # Convolution of B with an envelope match filter
         
-threshold = 17 # 15.3
+threshold = 15.4 # 15.3
 Predicted_onsets = []
 for i in range(1, len(Enveloped_Data) // 3 ): # Find the onsets of EnvData and > threshold value
     if (Enveloped_Data[3*i] > threshold) & (Enveloped_Data[3*i] > Enveloped_Data[3*i - 1]) & (Enveloped_Data[3*i] > Enveloped_Data[3*i - 2]):
         Predicted_onsets.append(3*i)
-
-# Draw the graph with onsets
 onset_times = np.array(Predicted_onsets) * n0 / frame_rate
+
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 6))
-ax1.plot(time, audio_data)
+
+ax1.plot(time, audio_data) # Draw the graph with onsets
 for onset_time in onset_times:
         ax1.axvline(x=onset_time, color='red', linestyle='-', linewidth = 0.5, label='Onset' if onset_time == onset_times[0] else "")
 ax1.set_title('Amplitude vs. Time with Onsets')
@@ -36,29 +36,30 @@ ax1.set_ylabel('Amplitude')
 
 
 # Remove small intervals between onsets
+# TmptOnset = Predicted_onsets
+print(f"frame rate = {frame_rate}")
+Predicted_onsets[0] = 0
 for o in range(1, len(Predicted_onsets)):
-    previous_index = o - 1
 
+    previous_index = o - 1
+    print(f"o = {o}, interval: {(Predicted_onsets[o] - Predicted_onsets[previous_index]) * n0 / frame_rate} sec")
     while previous_index >= 0 and Predicted_onsets[previous_index] == 0:
         previous_index -= 1 
 
     if previous_index >= 0:
-        if Predicted_onsets[o] - Predicted_onsets[previous_index] < 0.15 * frame_rate // n0:
+        print(f"previous index = {previous_index}")
+        if Predicted_onsets[o] - Predicted_onsets[previous_index] < 0.15 * frame_rate // n0 :
+            # print(f"interval: {(Predicted_onsets[o] - Predicted_onsets[previous_index]) * n0 / frame_rate}")
             Predicted_onsets[o] = 0
-
 
 # Remove the last onset if interval < 0.15 sec
 if Predicted_onsets[len(Predicted_onsets)-1] > (len(audio_data) - 0.15) * frame_rate // n0:
     Predicted_onsets[len(Predicted_onsets)-1] = 0
 
-# Draw the graph with new onsets
-onset_times = np.array(Predicted_onsets) * n0 / frame_rate
-
-# Store the onset times & onsets
-OnsetTimes = []
-for onset_time in onset_times:
+OnsetTimes = [] # Store the onset times & onsets
+for onset_time in Predicted_onsets:
     if onset_time != 0:
-        OnsetTimes.append(onset_time)
+        OnsetTimes.append(onset_time * n0 / frame_rate)
         print(f"onset_time: {onset_time} sec")
 
 OnsetIndex = []
@@ -107,7 +108,7 @@ ax3.set_xlabel('time')
 ax3.set_ylabel('Amplitude') 
 
 plt.tight_layout()
-#plt.show()
+plt.show()
 
 # Discrete Fourier Transform 
 
@@ -181,38 +182,38 @@ for o in range(0, N-1):
     SmoothData.extend(Xs)
 
 
-print(f"Onset magnitude = {OnsetMag} of all onset")
-print(f"Fundamental frequency = {FundFreq} of all onset")
-FundaFreq = min([value for value in FundFreq if value != 0 and value > 80 and value < 4000])
-print(f"Fundamental frequency = {FundaFreq}")
+# print(f"Onset magnitude = {OnsetMag} of all onset")
+# print(f"Fundamental frequency = {FundFreq} of all onset")
+# FundaFreq = min([value for value in FundFreq if value != 0 and value > 80 and value < 4000])
+# print(f"Fundamental frequency = {FundFareq}")
 
 
-fig, axs = plt.subplots(3, 1, figsize=(7, 7), sharex=True)
+# fig, axs = plt.subplots(3, 1, figsize=(7, 7), sharex=True)
 
-axs[0].plot(Indices, OriginalData, color='orange', label='Original Data')
-for onset in OnsetIndex:
-    axs[0].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
-    axs[0].text(onset, max(OriginalData) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
-axs[0].set_ylabel('Amplitude')
-axs[0].set_title('Original Data with Onset Lines')
-axs[0].legend()
+# axs[0].plot(Indices, OriginalData, color='orange', label='Original Data')
+# for onset in OnsetIndex:
+#     axs[0].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
+#     axs[0].text(onset, max(OriginalData) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
+# axs[0].set_ylabel('Amplitude')
+# axs[0].set_title('Original Data with Onset Lines')
+# axs[0].legend()
 
-axs[1].plot(Indices, DFTmagnitudes, color='blue', label='DFT Magnitude')
-for onset in OnsetIndex:
-    axs[1].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
-    axs[1].text(onset, max(DFTmagnitudes) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
-axs[1].set_ylabel('Amplitude')
-axs[1].set_title('DFT Magnitude with Onset Lines')
-axs[1].legend()
+# axs[1].plot(Indices, DFTmagnitudes, color='blue', label='DFT Magnitude')
+# for onset in OnsetIndex:
+#     axs[1].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
+#     axs[1].text(onset, max(DFTmagnitudes) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
+# axs[1].set_ylabel('Amplitude')
+# axs[1].set_title('DFT Magnitude with Onset Lines')
+# axs[1].legend()
 
-axs[2].plot(Indices, SmoothData, color='red', label='Smoothed DFT Magnitude')
-for onset in OnsetIndex:
-    axs[2].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
-    axs[2].text(onset, max(SmoothData) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
-axs[2].set_xlabel('Original Data Index')
-axs[2].set_ylabel('Amplitude')
-axs[2].set_title('Smoothed DFT Magnitude with Onset Lines')
-axs[2].legend()
+# axs[2].plot(Indices, SmoothData, color='red', label='Smoothed DFT Magnitude')
+# for onset in OnsetIndex:
+#     axs[2].axvline(x=onset, color='green', linestyle='--', alpha=0.6)
+#     axs[2].text(onset, max(SmoothData) * 0.9, 'Onset', color='green', rotation=90, ha='right', va='center')
+# axs[2].set_xlabel('Original Data Index')
+# axs[2].set_ylabel('Amplitude')
+# axs[2].set_title('Smoothed DFT Magnitude with Onset Lines')
+# axs[2].legend()
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
