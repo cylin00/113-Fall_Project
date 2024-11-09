@@ -113,44 +113,34 @@ SmoothData = []
 OnsetMag = []
 FundFreq = []
 FreqSeg = []
-
+Interval = []
 for o in range(0, N-1):
     window_size = OnsetIndex[o+1] - OnsetIndex[o]
+    Interval.append(window_size)
     segment = Enveloped_Data[o:o+window_size]
     (X_m_segment, freqs_segment) = Freq.FrequencyAnalyzing.DFT(segment, frame_rate)
     
-    # Add smooth filter to the DFT result
-    Xs = Freq.FrequencyAnalyzing.Smooth(X_m_segment, 20)
-    # L = 20
-    # smooth = [0] * window_size
-    # for i in range(0, window_size):
-    #     if abs(i) < window_size / 2:
-    #         smooth[i] = (L - abs(i)) / ( L ^ 2)
-    #     else:
-    #         smooth[i] = 0
-
-    # Xs = abs(X_m_segment) * smooth
+    Xs = Freq.FrequencyAnalyzing.Smooth(X_m_segment, 20) # Add smooth filter to the DFT result
 
     # Store the Points satisifying the three conditions after the smooth filter
     maxIndex = np.argmax(Xs)
     fund = frame_rate
     Fup = frame_rate / 2
     Flow = 80
-    print(f"len of M = {len(Xs)}")
     for i in range(0, len(Xs)):
         if i == 0 and Xs[i] > Xs[i+1] and Xs[i] >= Xs[maxIndex]/5:
-            print(f"*, i = {i}, freq = {i * frame_rate / window_size}")
-            if (i * frame_rate / window_size) <= Fup and (i * frame_rate / window_size) >= Flow:
-                print(f"fundamental frequency = {i * frame_rate / window_size}")
-                if i * frame_rate / window_size < fund:
-                    fund = i * frame_rate / window_size
+            # print(f"*, i = {i}, freq = {i * frame_rate / window_size}")
+            if freqs_segment[i] <= Fup and freqs_segment[i] >= Flow:
+                # print(f"fundamental frequency = {freqs_segment[i]}")
+                if freqs_segment[i] < fund:
+                    fund = freqs_segment[i]
         else:
             if Xs[i] > Xs[i-1] and Xs[i] > Xs[i+1] and Xs[i] >= Xs[maxIndex]/5:
-                print(f"*, i = {i}, freq = {i * frame_rate / window_size}")
-                if i * frame_rate / window_size <= Fup and i * frame_rate / window_size >= Flow:
-                    print(f"fundamental frequency = {i * frame_rate / window_size}")
-                    if i * frame_rate / window_size < fund:
-                        fund = i * frame_rate / window_size
+                # print(f"*, i = {i}, freq = {i * frame_rate / window_size}")
+                if freqs_segment[i] <= Fup and freqs_segment[i] >= Flow:
+                    # print(f"fundamental frequency = {i * frame_rate / window_size}")
+                    if freqs_segment[i] < fund:
+                        fund = i * freqs_segment[i]
     
     print(f"get fundamental frequency = {fund} between each onset")
 
@@ -172,7 +162,7 @@ for o in range(0, N-1):
     OriginalData.extend(segment)
     SmoothData.extend(Xs)
 
-    FundaFreq = min([value for value in freqs_segment if value != 0 and value > 80 and value < 4000])
+    FundaFreq = min([value for value in freqs_segment if (value != 0 and value > 80 and value < 4000)])
     FreqSeg.append(FundaFreq)
 
 print(f"Fundamental frequency = {FundFreq} of all onset")
@@ -205,8 +195,22 @@ axs[2].set_xlabel('Original Data Index')
 axs[2].set_ylabel('Amplitude')
 axs[2].set_title('Smoothed DFT Magnitude with Onset Lines')
 axs[2].legend()
-
 plt.tight_layout()
-plt.show()
 
-# Freg Seq -> fundamental frequency
+# Freg Seq -> fundamental frequency of each onset
+# OnsetIndex -> onset index
+
+midi = 48 + 12 * np.log2(np.array(FreqSeg) / 261.63)
+print(f"midi number = {midi}")
+
+notes = Freq.FrequencyAnalyzing.GetNotes(midi)
+print(f"notes = {notes}")
+
+b0 = np.mean(Interval)
+print(f"mean onset interval = {b0} = {b0 * n0 / frame_rate} sec")
+
+
+beat = 2 ** np.round(np.log2(Interval / b0))
+print(f"beat = {beat}")
+
+plt.show()

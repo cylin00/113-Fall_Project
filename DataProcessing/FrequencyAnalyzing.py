@@ -18,5 +18,26 @@ class FrequencyAnalyzing:
                 smooth[i] = 0
 
         Xs = abs(X) * smooth
-        
+
         return Xs
+    
+    def GetNotes(midi):
+        base_notes = {
+            48: "Do", 50: "Re", 52: "Mi", 53: "Fa", 55: "So", 57: "La", 59: "Ti"
+        }
+        notes = []
+
+        for value in midi:
+
+            rounded_value = round(value)
+            base_note = (rounded_value - 48) % 12 + 48
+            octave = (rounded_value - 48) // 12 
+            
+            note_name = base_notes.get(base_note, None)
+            if note_name:
+                note_with_octave = f"{note_name} (Octave {octave})"
+                notes.append(note_with_octave)
+            else:
+                notes.append("Unknown")
+
+        return notes
