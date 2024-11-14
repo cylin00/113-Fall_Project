@@ -29,9 +29,14 @@ def TranformMidiNumber(value):
 
 def ReadNote(n):
     note = []
+    noteDiff = []
+
     for i in range(0, len(n)):
         note.append(TranformMidiNumber(ord(n[i])))
-    return note
+
+    for i in range(0, len(note)-1):
+        noteDiff.append(note[i+1] - note[i])
+    return (note, noteDiff)
 
 def ReadBeat(b):
     beat = []
@@ -48,8 +53,11 @@ def AnalyzeEachSong(s):
         if ord(s[i]) == 47: # 47 -> slash
             sl = i
 
+    (Note, NoteDiff) = ReadNote(s[sp[len(sp)-1]+1:sl])
+
     return np.array([(s[0:sp[0]], 
-                      ReadNote(s[sp[len(sp)-1]+1:sl]), 
+                      Note,
+                      NoteDiff, 
                       ReadBeat(s[sl+1:len(s)-1]))], 
                     dtype=song_dtype)
     
@@ -58,7 +66,8 @@ t = open('Target_tempo_50.txt', 'r', encoding='big5')
 
 song_dtype = np.dtype([
     ("name", "U50"),          
-    ("notes", "O"),        
+    ("notes", "O"),
+    ("notediff", "O"),        
     ("beats", "O")
 ])
 
