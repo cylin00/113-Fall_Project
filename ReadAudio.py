@@ -76,10 +76,4 @@ def ReadTarget():
     for s in t.readlines():
         songs = np.append(songs, AnalyzeEachSong(s))
 
-    # with open('songs.txt', 'w') as file:
-    #     for song in songs:
-    #         file.write(f"{song}\n") 
-
-    
-
     return songs

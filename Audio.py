@@ -5,7 +5,6 @@ import numpy as np
 def GetAudioData(duration, audio):
 
     audio_string = os.path.join('hummingdata', str(duration), audio)
-    # print(audio_string)
 
     with wave.open(audio_string, 'rb') as audio:
 
