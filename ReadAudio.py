@@ -1,5 +1,12 @@
 import numpy as np
 
+song_dtype = np.dtype([
+        ("name", "U50"),          
+        ("notes", "O"),
+        ("notediff", "O"),        
+        ("beats", "O")
+    ])
+
 def TranformMidiNumber(value):
     midiMap = {
         65: 36,
@@ -60,21 +67,19 @@ def AnalyzeEachSong(s):
                       NoteDiff, 
                       ReadBeat(s[sl+1:len(s)-1]))], 
                     dtype=song_dtype)
+
+def ReadTarget():
+
+    t = open('Target_tempo_50.txt', 'r', encoding='big5')
+
+    songs = np.array([], dtype=song_dtype)
+    for s in t.readlines():
+        songs = np.append(songs, AnalyzeEachSong(s))
+
+    # with open('songs.txt', 'w') as file:
+    #     for song in songs:
+    #         file.write(f"{song}\n") 
+
     
 
-t = open('Target_tempo_50.txt', 'r', encoding='big5')
-
-song_dtype = np.dtype([
-    ("name", "U50"),          
-    ("notes", "O"),
-    ("notediff", "O"),        
-    ("beats", "O")
-])
-
-songs = np.array([], dtype=song_dtype)
-for s in t.readlines():
-    songs = np.append(songs, AnalyzeEachSong(s))
-
-with open('songs.txt', 'w') as file:
-    for song in songs:
-        file.write(f"{song}\n") 
+    return songs
