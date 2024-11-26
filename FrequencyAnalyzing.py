@@ -1,9 +1,30 @@
 import numpy as np
 
 def DFT(segment, frame_rate):
-    X_m_segment = np.fft.fft(segment)
-    freqs_segment = np.fft.fftfreq(len(segment), 1/frame_rate)
-    return (X_m_segment, freqs_segment)
+    # X_m_segment = np.fft.fft(segment)
+    # freqs_segment = np.fft.fftfreq(len(segment), 1/frame_rate)
+    # return (X_m_segment, freqs_segment)
+
+    segment = np.piecewise(segment, 
+                           [segment < 1, segment >= 1], 
+                           [lambda t: (2 * t) ** 2, lambda t: (4 - 2 * t) ** 2])
+
+    N = len(segment)  
+    X_m_segment = []  
+
+    for m in range(N):
+        sum_real = 0  
+        sum_imag = 0  
+        for n in range(N):
+            angle = -2 * np.pi * m * n / N
+            sum_real += segment[n] * np.cos(angle)
+            sum_imag += segment[n] * np.sin(angle)
+        X_m_segment.append(complex(sum_real, sum_imag))  
+
+    X_m_segment = np.array(X_m_segment)  
+    freqs_segment = np.linspace(0, frame_rate, N, endpoint=False)
+
+    return X_m_segment, freqs_segment
 
 def Smooth(X, L):
 

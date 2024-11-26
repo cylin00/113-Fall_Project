@@ -3,19 +3,31 @@ import os
 import numpy as np
 
 def GetMaxAmplitude(n0, data):
-
-    A = np.zeros(len(data) // n0)
-
-    for idx, i in enumerate(range(0, len(data), n0)):
-        group = data[i:i + n0]
-        A[idx] = max(group)  
-
+    num_chunks = len(data) // n0
+    reshaped_data = data[:num_chunks * n0].reshape(-1, n0)
+    
+    A = np.max(reshaped_data, axis=1)
+    
     rho = 0
-    for i in range(0, len(A)):
-        if A[i] < rho:
-            A[i] = 0
-
+    A[A < rho] = 0
+    
     return A
+
+
+# def GetMaxAmplitude(n0, data):
+
+#     A = np.zeros(len(data) // n0)
+
+#     for idx, i in enumerate(range(0, len(data), n0)):
+#         group = data[i:i + n0]
+#         A[idx] = max(group)  
+
+#     rho = 0
+#     for i in range(0, len(A)):
+#         if A[i] < rho:
+#             A[i] = 0
+
+#     return A
 
 def NormalizeData(A):
 

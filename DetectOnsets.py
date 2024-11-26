@@ -11,7 +11,7 @@ def GetAmplitude(audio, n0, startTime, endTime, frame_rate):
 
 def Query(songname):
 
-    (amplitude_data, time, frame_rate, audio_data) = Audio.GetAudioData(10, songname)
+    (amplitude_data, time, frame_rate, audio_data) = Audio.GetAudioData(20, songname)
 
     # Select the max-amplitude data in groups of n0 = 80
     n0 = 80
@@ -86,6 +86,10 @@ def Query(songname):
         window_size = OnsetIndex[o+1] - OnsetIndex[o]
         Interval.append(window_size)
         segment = Enveloped_Data[o:o+window_size]
+
+        segment = segment - np.mean(segment)  
+        segment = segment * np.hamming(len(segment))  
+    
         (X_m_segment, freqs_segment) = FrequencyAnalyzing.DFT(segment, frame_rate)
         
         Xs = FrequencyAnalyzing.Smooth(X_m_segment, 20) # Add smooth filter to the DFT result
@@ -132,4 +136,8 @@ def Query(songname):
     b0 = np.mean(Interval)
     beat = 2 ** np.round(np.log2(Interval / b0))
 
-    return midi
+    intMidi = np.array([36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71])
+    Midi = intMidi[np.abs(midi[:, None] - intMidi).argmin(axis=1)]
+
+
+    return Midi
